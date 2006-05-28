@@ -1,0 +1,9 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=1566
+
+A file-type plug-in and syntax file for the Vim editor that provides readers of David Allen's book, "Getting Things Done", a way to manage their task lists from within Vim.
+
+Screenshots, installation instructions and a user's guide is available at:
+http://www.bartholomew.id.au/projects/gtdwithvim/
+
+
+This is my first Vim script, so if anyone has any recommendations (especially to improve portability and compatibility with other Vim versions) please contact me.
