@@ -1,32 +1,45 @@
 " Vim filetype plugin file
 " Language:     GTD
 " Maintainer:   William Bartholomew <william@bartholomew.id.au>
-" Last Change:  2006-05-25
+" Last Change:  2006-05-30
 
 if exists("b:did_ftplugin")
     finish
 endif
 let b:did_ftplugin = 1
 
-" allow @ and : in keywords
+" Allow @ and : in keywords.
 setlocal iskeyword="a-z,A-Z,0-9,@,:"
-noremenu <silent> &GTD.&New\ Task	:call <SID>GtdNewTask()<CR>
-noremenu <silent> &GTD.Mark\ &Done	:call <SID>GtdMarkDone()<CR>
-noremenu <silent> &GTD.Add\ &Context	:call <SID>GtdPromptAddContext()<CR>
-noremenu <silent> &GTD.Assign\ &Project	:call <SID>GtdAssignProject()<CR>
-noremenu <silent> &GTD.Re-&Sort		:call <SID>GtdSort()<CR>:write<CR>
+
+" Add commands.
+command -nargs=? GtdNewTask call <SID>GtdNewTask( <q-args> )
+command -nargs=* GtdAddContext call <SID>GtdAddContext( <f-args> )
+command -nargs=? GtdAssignProject call <SID>GtdAssignProject( <q-args> )
+command -nargs=0 GtdMarkDone call <SID>GtdMarkDone()
+command -nargs=0 GtdSort call <SID>GtdSort()
+
+" Add GTD menu.
+noremenu <silent> &GTD.&New\ Task	:GtdNewTask<CR>
+noremenu <silent> &GTD.Mark\ &Done	:GtdMarkDone<CR>
+noremenu <silent> &GTD.Add\ &Context	:GtdAddContext<CR>
+noremenu <silent> &GTD.Assign\ &Project	:GtdAssignProject<CR>
+noremenu <silent> &GTD.Re-&Sort		:GtdSort<CR>
 
 " Add mappings, unless the user didn't want this.
 if !exists("no_plugin_maps") && !exists("no_gtd_maps")
-    noremap  <silent> <LocalLeader>n	:call <SID>GtdNewTask()<CR>
-    noremap  <silent> <LocalLeader>d	:call <SID>GtdMarkDone()<CR>
-    noremap  <silent> <LocalLeader>c	:call <SID>GtdPromptAddContext()<CR>
-    noremap  <silent> <LocalLeader>p	:call <SID>GtdAssignProject()<CR>
-    noremap  <silent> <LocalLeader>s	:call <SID>GtdSort()<CR>
+    noremap  <silent> <LocalLeader>n	:GtdNewTask<CR>
+    noremap  <silent> <LocalLeader>d	:GtdMarkDone<CR>
+    noremap  <silent> <LocalLeader>c	:GtdAddContext<CR>
+    noremap  <silent> <LocalLeader>p	:GtdAssignProject<CR>
+    noremap  <silent> <LocalLeader>s	:GtdSort<CR>
 endif
 
-function! s:GtdNewTask()
-    let task = input( "What is the task? " )
+function! s:GtdNewTask( task )
+    if a:task == ""
+	let task = input( "GTD Task Description: " )
+    else
+	let task = a:task
+    endif
     if task != ""
 	if match( getline( "." ), "^$" ) == 0
 	    call setline( ".", task )
@@ -36,8 +49,10 @@ function! s:GtdNewTask()
 	call <SID>GtdSort()
 	write
 
-	let [lnum, col] = searchpos( "^" . task . "$" )
-	call cursor( [lnum, col] )
+	"let [lnum, col] = searchpos( "^" . task . "$" )
+	"call cursor( [lnum, col] )
+
+	call search( "^" . task . "$", "w" )
     endif
 endfunction
 
@@ -53,8 +68,12 @@ function! s:GtdMarkDone()
     endif
 endfunction
 
-function! s:GtdAssignProject()
-    let project_name = input( "What is the project? " )
+function! s:GtdAssignProject( project_name )
+    if a:project_name == ""
+	let project_name = input( "GTD Project Name: " )
+    else
+	let project_name = a:project_name
+    endif
     if project_name != ""
 	let project_tag = "p:" . project_name
 
@@ -70,30 +89,32 @@ function! s:GtdAssignProject()
     endif
 endfunction
 
-function! s:GtdAddContext( context_name )
+function! s:GtdAddContext( ... )
+    if a:0 == 0
+        call <SID>GtdAddContext( input( "GTD Context: " ) )
+	return
+    endif
+
     let current_line = getline( "." )
 
-    if stridx( a:context_name, "@" ) == -1
-	let context_name = "@" . a:context_name
-    else
-	let context_name = a:context_name
-    endif
+    let index = a:0
+    while index >= 1
+	let context = a:{index}
+	if stridx( context, "@" ) == -1
+	    let context = "@" . context
+	endif
 
-    if stridx( current_line, context_name ) == -1
-	let new_line = substitute( current_line, "^\\(p:\\S\\+\\s\\?\\)\\?", "\\1" . context_name . " ", "" )
-	call setline( ".", new_line )
+	if stridx( current_line, context ) == -1
+	    let current_line = substitute( current_line, "^\\(p:\\S\\+\\s\\?\\)\\?", "\\1" . context . " ", "" )
+	endif
 
-	call <SID>GtdSort()
-	write
-    endif
-endfunction
+	let index = index - 1
+    endwhile
 
-function! s:GtdPromptAddContext()
-    let context_name = input( "What is the context? " )
+    call setline( ".", current_line )
 
-    if context_name != ""
-	call <SID>GtdAddContext( context_name )
-    endif
+    call <SID>GtdSort()
+    write
 endfunction
 
 function! s:GtdIsTaskDone( task )
@@ -105,4 +126,3 @@ function! s:GtdSort()
 	%! sort
     endif
 endfunction
-
