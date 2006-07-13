@@ -1,7 +1,7 @@
 " Vim filetype plugin file
 " Language:     GTD
 " Maintainer:   William Bartholomew <william@bartholomew.id.au>
-" Last Change:  2006-05-30
+" Last Change:  2006-07-13
 
 if exists("b:did_ftplugin")
     finish
@@ -41,6 +41,9 @@ function! s:GtdNewTask( task )
 	let task = a:task
     endif
     if task != ""
+	let current_time = strftime("%Y%m%d")
+	let task = task . " [" . current_time . "]"
+
 	if match( getline( "." ), "^$" ) == 0
 	    call setline( ".", task )
 	else
